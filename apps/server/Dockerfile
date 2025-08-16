@@ -8,7 +8,7 @@ RUN corepack enable
 WORKDIR /app
 
 # Copy only root files needed for installs
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml tsconfig.base.json ./
 
 # Copy workspace package.jsons for filtering installs
 COPY apps/server/package.json apps/server/
@@ -19,6 +19,8 @@ RUN pnpm install --frozen-lockfile
 
 # ---- build shared types ----
 FROM base AS build-types
+# Ensure tsconfig.base.json is available for shared-types build
+COPY tsconfig.base.json ./
 COPY packages/shared-types ./packages/shared-types
 RUN pnpm --filter @docker-gui/shared-types build
 
@@ -35,7 +37,7 @@ FROM base AS pruned
 # Bring compiled dist from build-server so deploy includes it
 COPY --from=build-server /app/apps/server/dist apps/server/dist
 # Use pnpm deploy (legacy mode for broader compatibility) to create a self-contained package dir
-RUN pnpm --filter @docker-gui/server --prod deploy --legacy server-deploy
+RUN pnpm --filter @docker-gui/server --prod deploy server-deploy
 
 # ---- runtime image ----
 FROM node:20-alpine AS runtime

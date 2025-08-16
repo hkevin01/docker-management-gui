@@ -7,13 +7,14 @@ ENV PATH=$PNPM_HOME:$PATH
 RUN corepack enable
 WORKDIR /app
 
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml tsconfig.base.json ./
 COPY apps/web/package.json apps/web/
 COPY packages/shared-types/package.json packages/shared-types/
 # install deps
 RUN pnpm install --frozen-lockfile
 
 # build shared types
+COPY tsconfig.base.json ./
 COPY packages/shared-types ./packages/shared-types
 RUN pnpm --filter @docker-gui/shared-types build
 

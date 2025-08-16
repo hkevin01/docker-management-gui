@@ -15,7 +15,11 @@ import { networkRoutes } from './routes/networks/index.js';
 const PORT = Number(process.env.PORT) || 3001;
 const HOST = process.env.HOST || 'localhost';
 
-async function buildServer() {
+type BuildOptions = {
+  docker?: any;
+};
+
+async function buildServer(options: BuildOptions = {}) {
   const fastify = Fastify({
     logger: {
       level: process.env.LOG_LEVEL || 'info',
@@ -91,8 +95,12 @@ async function buildServer() {
     transformSpecificationClone: true,
   });
 
-  // Register Docker plugin
-  await fastify.register(dockerPlugin);
+  // Register Docker plugin or inject provided docker client (for tests)
+  if (options.docker) {
+    fastify.decorate('docker', options.docker);
+  } else {
+    await fastify.register(dockerPlugin);
+  }
 
   // Register routes
   await fastify.register(healthRoutes, { prefix: '/api' });
