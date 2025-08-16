@@ -18,7 +18,7 @@
     "lint": "pnpm --recursive lint",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "clean": "pnpm --recursive clean && rm -rf node_modules",
-    "postinstall": "pnpm --recursive install"
+  "postinstall": ""
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^6.0.0",
