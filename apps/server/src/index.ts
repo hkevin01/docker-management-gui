@@ -36,6 +36,7 @@ async function buildServer() {
       'http://localhost:5173', // Vite dev server
       'http://localhost:3000', // React dev server
       'http://localhost:4173', // Vite preview
+  'http://localhost:8080', // Nginx-served web container
     ],
     credentials: true,
   });

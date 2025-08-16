@@ -1,5 +1,4 @@
 import { FastifyPluginAsync } from 'fastify';
-import { DockerImage } from '@docker-gui/shared-types';
 
 const imageRoutes: FastifyPluginAsync = async (fastify) => {
   // List images
@@ -27,7 +26,7 @@ const imageRoutes: FastifyPluginAsync = async (fastify) => {
       const options: any = { all, digests };
       if (filters) options.filters = JSON.parse(filters);
 
-      const images = await fastify.docker.listImages(options) as DockerImage[];
+  const images = await fastify.docker.listImages(options);
       
       return {
         success: true,
@@ -66,7 +65,7 @@ const imageRoutes: FastifyPluginAsync = async (fastify) => {
     }
   });
 
-  // Pull image
+  // Pull image (simple endpoint without streaming logs)
   fastify.post('/pull', {
     schema: {
       tags: ['images'],
@@ -81,8 +80,7 @@ const imageRoutes: FastifyPluginAsync = async (fastify) => {
         required: ['repoTag'],
       },
     },
-    websocket: true,
-  }, async (connection, request) => {
+  }, async (request) => {
     try {
       const { repoTag, tag, authconfig } = request.body as {
         repoTag: string;
@@ -90,38 +88,17 @@ const imageRoutes: FastifyPluginAsync = async (fastify) => {
         authconfig?: any;
       };
 
-      const pullStream = await fastify.docker.pull(repoTag, { tag, authconfig });
-      
-      pullStream.on('data', (chunk) => {
-        try {
-          const data = JSON.parse(chunk.toString());
-          connection.socket.send(JSON.stringify(data));
-        } catch (err) {
-          connection.socket.send(chunk.toString());
-        }
+      await new Promise<void>((resolve, reject) => {
+        fastify.docker.pull(repoTag, { tag, authconfig }, (err: any, stream: any) => {
+          if (err) return reject(err);
+          stream.on('end', () => resolve());
+          stream.on('error', reject);
+        });
       });
 
-      pullStream.on('error', (error) => {
-        connection.socket.send(JSON.stringify({
-          error: error.message,
-        }));
-      });
-
-      pullStream.on('end', () => {
-        connection.socket.send(JSON.stringify({
-          status: 'Pull complete',
-        }));
-        connection.socket.close();
-      });
-
-      connection.socket.on('close', () => {
-        pullStream.destroy();
-      });
+      return { success: true, message: `Pull of ${repoTag}${tag ? ':' + tag : ''} started/completed` };
     } catch (error) {
-      connection.socket.send(JSON.stringify({
-        error: `Failed to pull image: ${error}`,
-      }));
-      connection.socket.close();
+      throw fastify.httpErrors.internalServerError(`Failed to pull image: ${error}`);
     }
   });
 

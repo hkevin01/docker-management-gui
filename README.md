@@ -183,14 +183,27 @@ cd apps/web && pnpm preview
 
 ## Docker Deployment
 
-```bash
-# Build and run with Docker Compose
-docker-compose up --build
+This repo includes Dockerfiles and a compose stack to run the API and web UI.
 
-# Or build individual containers
-docker build -f apps/server/Dockerfile -t docker-gui-server .
-docker build -f apps/web/Dockerfile -t docker-gui-web .
+```bash
+# Build images
+docker compose build
+
+# Start stack (bind-mounts host Docker socket)
+docker compose up -d
+
+# Check
+curl -s http://localhost:3001/api/health | jq
+open http://localhost:8080
+
+# Stop
+docker compose down
 ```
+
+Notes:
+- The web UI is served by nginx on port 8080 and proxies API calls to the server service.
+- The API runs on port 3001 and requires access to /var/run/docker.sock provided by compose.
+- The frontend defaults to using a relative API base path `/api`; override with `VITE_API_URL` for non-proxied setups.
 
 ## Desktop Application (Optional)
 

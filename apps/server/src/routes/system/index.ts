@@ -1,5 +1,4 @@
 import { FastifyPluginAsync } from 'fastify';
-import { DockerSystemInfo, DockerSystemDf } from '@docker-gui/shared-types';
 
 const systemRoutes: FastifyPluginAsync = async (fastify) => {
   // Get Docker system information
@@ -19,7 +18,7 @@ const systemRoutes: FastifyPluginAsync = async (fastify) => {
     },
   }, async () => {
     try {
-      const info = await fastify.docker.info() as DockerSystemInfo;
+  const info = await fastify.docker.info();
       return {
         success: true,
         data: info,
@@ -46,7 +45,7 @@ const systemRoutes: FastifyPluginAsync = async (fastify) => {
     },
   }, async () => {
     try {
-      const df = await fastify.docker.df() as DockerSystemDf;
+  const df = await fastify.docker.df();
       return {
         success: true,
         data: df,
@@ -56,62 +55,7 @@ const systemRoutes: FastifyPluginAsync = async (fastify) => {
     }
   });
 
-  // Stream Docker events
-  fastify.get('/events', {
-    schema: {
-      tags: ['system'],
-      description: 'Stream Docker events via Server-Sent Events',
-      querystring: {
-        type: 'object',
-        properties: {
-          since: { type: 'string' },
-          until: { type: 'string' },
-          filters: { type: 'string' },
-        },
-      },
-    },
-    websocket: true,
-  }, async (connection) => {
-    try {
-      const eventStream = await fastify.docker.getEvents({
-        since: Date.now() / 1000,
-      });
-
-      eventStream.on('data', (chunk) => {
-        try {
-          const event = JSON.parse(chunk.toString());
-          connection.socket.send(JSON.stringify({
-            type: 'event',
-            data: event,
-          }));
-        } catch (err) {
-          fastify.log.error('Error parsing Docker event:', err);
-        }
-      });
-
-      eventStream.on('error', (error) => {
-        fastify.log.error('Docker events stream error:', error);
-        connection.socket.send(JSON.stringify({
-          type: 'error',
-          error: error.message,
-        }));
-      });
-
-      connection.socket.on('close', () => {
-        eventStream.destroy();
-      });
-
-      connection.socket.on('error', (error) => {
-        fastify.log.error('WebSocket error:', error);
-        eventStream.destroy();
-      });
-    } catch (error) {
-      connection.socket.send(JSON.stringify({
-        type: 'error',
-        error: `Failed to start event stream: ${error}`,
-      }));
-    }
-  });
+  // Events streaming will be added later
 
   // System prune
   fastify.post('/prune', {

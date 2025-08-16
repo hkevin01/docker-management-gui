@@ -1,4 +1,6 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
+// Default to relative /api so it works behind a reverse proxy (nginx) in production
+// and via Vite proxy in development. Override with VITE_API_URL when needed.
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
 
 export interface ApiResponse<T = any> {
   success: boolean
@@ -280,18 +282,20 @@ class ApiClient {
     if (options?.timestamps) searchParams.set('timestamps', 'true')
     if (options?.tail) searchParams.set('tail', options.tail)
     
-    const wsBaseUrl = this.baseURL.replace('http', 'ws')
-    const query = searchParams.toString()
-    return new WebSocket(`${wsBaseUrl}/containers/${containerId}/logs${query ? `?${query}` : ''}`)
+  const query = searchParams.toString()
+  const originWs = window.location.origin.replace(/^http/, 'ws')
+  const basePath = this.baseURL.startsWith('http') ? new URL(this.baseURL).pathname : this.baseURL
+  return new WebSocket(`${originWs}${basePath}/containers/${containerId}/logs${query ? `?${query}` : ''}`)
   }
 
   createStatsWebSocket(containerId: string, stream = false) {
     const searchParams = new URLSearchParams()
     if (stream) searchParams.set('stream', 'true')
     
-    const wsBaseUrl = this.baseURL.replace('http', 'ws')
-    const query = searchParams.toString()
-    return new WebSocket(`${wsBaseUrl}/containers/${containerId}/stats${query ? `?${query}` : ''}`)
+  const query = searchParams.toString()
+  const originWs = window.location.origin.replace(/^http/, 'ws')
+  const basePath = this.baseURL.startsWith('http') ? new URL(this.baseURL).pathname : this.baseURL
+  return new WebSocket(`${originWs}${basePath}/containers/${containerId}/stats${query ? `?${query}` : ''}`)
   }
 
   createEventsWebSocket(options?: {
@@ -304,9 +308,10 @@ class ApiClient {
     if (options?.until) searchParams.set('until', options.until)
     if (options?.filters) searchParams.set('filters', JSON.stringify(options.filters))
     
-    const wsBaseUrl = this.baseURL.replace('http', 'ws')
-    const query = searchParams.toString()
-    return new WebSocket(`${wsBaseUrl}/system/events${query ? `?${query}` : ''}`)
+  const query = searchParams.toString()
+  const originWs = window.location.origin.replace(/^http/, 'ws')
+  const basePath = this.baseURL.startsWith('http') ? new URL(this.baseURL).pathname : this.baseURL
+  return new WebSocket(`${originWs}${basePath}/system/events${query ? `?${query}` : ''}`)
   }
 }
 

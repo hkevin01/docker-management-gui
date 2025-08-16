@@ -1,5 +1,4 @@
 import { FastifyPluginAsync } from 'fastify';
-import { DockerContainer } from '@docker-gui/shared-types';
 
 const containerRoutes: FastifyPluginAsync = async (fastify) => {
   // List containers
@@ -35,11 +34,11 @@ const containerRoutes: FastifyPluginAsync = async (fastify) => {
         filters?: string;
       };
 
-      const options: any = { all, size };
+  const options: any = { all, size };
       if (limit) options.limit = limit;
       if (filters) options.filters = JSON.parse(filters);
 
-      const containers = await fastify.docker.listContainers(options) as DockerContainer[];
+  const containers = await fastify.docker.listContainers(options);
       
       return {
         success: true,
@@ -253,134 +252,7 @@ const containerRoutes: FastifyPluginAsync = async (fastify) => {
     }
   });
 
-  // Get container logs
-  fastify.get('/:id/logs', {
-    schema: {
-      tags: ['containers'],
-      description: 'Get container logs',
-      params: {
-        type: 'object',
-        properties: {
-          id: { type: 'string' },
-        },
-        required: ['id'],
-      },
-      querystring: {
-        type: 'object',
-        properties: {
-          follow: { type: 'boolean', default: false },
-          stdout: { type: 'boolean', default: true },
-          stderr: { type: 'boolean', default: true },
-          since: { type: 'number' },
-          until: { type: 'number' },
-          timestamps: { type: 'boolean', default: false },
-          tail: { type: 'string', default: 'all' },
-        },
-      },
-    },
-    websocket: true,
-  }, async (connection, request) => {
-    try {
-      const { id } = request.params as { id: string };
-      const {
-        follow = false,
-        stdout = true,
-        stderr = true,
-        since,
-        until,
-        timestamps = false,
-        tail = 'all',
-      } = request.query as {
-        follow?: boolean;
-        stdout?: boolean;
-        stderr?: boolean;
-        since?: number;
-        until?: number;
-        timestamps?: boolean;
-        tail?: string;
-      };
-
-      const container = fastify.docker.getContainer(id);
-      const logStream = await container.logs({
-        follow,
-        stdout,
-        stderr,
-        since,
-        until,
-        timestamps,
-        tail,
-      });
-
-      logStream.on('data', (chunk) => {
-        connection.socket.send(chunk.toString());
-      });
-
-      logStream.on('error', (error) => {
-        connection.socket.send(`Error: ${error.message}`);
-      });
-
-      logStream.on('end', () => {
-        connection.socket.close();
-      });
-
-      connection.socket.on('close', () => {
-        logStream.destroy();
-      });
-    } catch (error) {
-      connection.socket.send(`Error: Failed to get logs: ${error}`);
-      connection.socket.close();
-    }
-  });
-
-  // Get container stats
-  fastify.get('/:id/stats', {
-    schema: {
-      tags: ['containers'],
-      description: 'Get container stats',
-      params: {
-        type: 'object',
-        properties: {
-          id: { type: 'string' },
-        },
-        required: ['id'],
-      },
-      querystring: {
-        type: 'object',
-        properties: {
-          stream: { type: 'boolean', default: false },
-        },
-      },
-    },
-    websocket: true,
-  }, async (connection, request) => {
-    try {
-      const { id } = request.params as { id: string };
-      const { stream = false } = request.query as { stream?: boolean };
-
-      const container = fastify.docker.getContainer(id);
-      const statsStream = await container.stats({ stream });
-
-      statsStream.on('data', (chunk) => {
-        try {
-          const stats = JSON.parse(chunk.toString());
-          connection.socket.send(JSON.stringify(stats));
-        } catch (err) {
-          connection.socket.send(`Error parsing stats: ${err}`);
-        }
-      });
-
-      statsStream.on('error', (error) => {
-        connection.socket.send(`Error: ${error.message}`);
-      });
-
-      connection.socket.on('close', () => {
-        statsStream.destroy();
-      });
-    } catch (error) {
-      connection.socket.send(`Error: Failed to get stats: ${error}`);
-      connection.socket.close();
-    }
-  });
+  // Logs and stats streaming endpoints will be added later
 
   // Prune containers
   fastify.post('/prune', {
