@@ -14,7 +14,9 @@
   "scripts": {
     "dev": "concurrently \"pnpm --filter server dev\" \"pnpm --filter web dev\"",
     "build": "pnpm --recursive build",
-    "test": "pnpm --recursive test",
+  "test": "pnpm --recursive run test",
+  "test:server": "pnpm --filter @docker-gui/server run test",
+  "test:server:run": "pnpm --filter @docker-gui/server run test:run",
     "lint": "pnpm --recursive lint",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "clean": "pnpm --recursive clean && rm -rf node_modules",

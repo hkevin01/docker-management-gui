@@ -22,6 +22,7 @@ RUN pnpm --filter @docker-gui/shared-types build
 COPY apps/web/tsconfig*.json apps/web/
 COPY apps/web/vite.config.ts apps/web/
 COPY apps/web/index.html apps/web/
+COPY apps/web/public apps/web/public
 COPY apps/web/src apps/web/src
 RUN pnpm --filter @docker-gui/web build
 
