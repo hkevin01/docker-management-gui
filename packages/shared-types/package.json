@@ -1,0 +1,18 @@
+{
+  "name": "@docker-gui/shared-types",
+  "version": "1.0.0",
+  "description": "Shared TypeScript types for Docker GUI",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "lint": "eslint src --ext .ts",
+    "format": "prettier --write src/**/*.ts"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.1.6"
+  }
+}

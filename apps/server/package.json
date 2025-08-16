@@ -1,0 +1,39 @@
+{
+  "name": "@docker-gui/server",
+  "version": "1.0.0",
+  "description": "Fastify server for Docker GUI",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "clean": "rm -rf dist",
+    "lint": "eslint src --ext .ts",
+    "format": "prettier --write src/**/*.ts",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage"
+  },
+  "dependencies": {
+    "@docker-gui/shared-types": "workspace:*",
+    "@fastify/cors": "^9.0.1",
+    "@fastify/sensible": "^5.5.0",
+    "@fastify/swagger": "^8.14.0",
+    "@fastify/swagger-ui": "^2.1.0",
+    "@fastify/websocket": "^10.0.1",
+    "dockerode": "^4.0.2",
+    "fastify": "^4.26.2",
+    "fastify-plugin": "^4.5.1",
+    "pino": "^8.19.0",
+    "pino-pretty": "^10.3.1",
+    "ws": "^8.16.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/dockerode": "^3.3.23",
+    "@types/node": "^20.11.25",
+    "@types/ws": "^8.5.10",
+    "tsx": "^4.7.1",
+    "typescript": "^5.1.6",
+    "vitest": "^1.3.1"
+  }
+}

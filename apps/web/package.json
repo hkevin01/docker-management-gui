@@ -1,0 +1,36 @@
+{
+  "name": "@docker-gui/web",
+  "version": "1.0.0",
+  "description": "React frontend for Docker GUI",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "format": "prettier --write src/**/*.{ts,tsx}",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@docker-gui/shared-types": "workspace:*",
+    "@emotion/react": "^11.11.3",
+    "@emotion/styled": "^11.11.0",
+    "@mui/icons-material": "^5.15.11",
+    "@mui/material": "^5.15.11",
+    "@tanstack/react-query": "^5.25.0",
+    "@tanstack/react-query-devtools": "^5.25.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.22.2",
+    "recharts": "^2.12.0",
+    "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.56",
+    "@types/react-dom": "^18.2.19",
+    "@types/ws": "^8.5.10",
+    "@vitejs/plugin-react": "^4.2.1",
+    "typescript": "^5.1.6",
+    "vite": "^5.1.4"
+  }
+}
