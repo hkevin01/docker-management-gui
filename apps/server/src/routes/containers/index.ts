@@ -1,4 +1,11 @@
 import { FastifyPluginAsync } from 'fastify';
+import { PassThrough } from 'stream';
+
+function assertNotSafeMode(fastify: any) {
+  if (process.env.SAFE_MODE === 'true') {
+    throw fastify.httpErrors.forbidden('Operation disabled in SAFE_MODE');
+  }
+}
 
 const containerRoutes: FastifyPluginAsync = async (fastify) => {
   // List containers
@@ -92,6 +99,7 @@ const containerRoutes: FastifyPluginAsync = async (fastify) => {
     },
   }, async (request) => {
     try {
+  assertNotSafeMode(fastify);
       const { id } = request.params as { id: string };
       const container = fastify.docker.getContainer(id);
       await container.start();
@@ -126,6 +134,7 @@ const containerRoutes: FastifyPluginAsync = async (fastify) => {
     },
   }, async (request) => {
     try {
+  assertNotSafeMode(fastify);
       const { id } = request.params as { id: string };
       const { t } = request.body as { t?: number };
       const container = fastify.docker.getContainer(id);
@@ -161,6 +170,7 @@ const containerRoutes: FastifyPluginAsync = async (fastify) => {
     },
   }, async (request) => {
     try {
+  assertNotSafeMode(fastify);
       const { id } = request.params as { id: string };
       const { t } = request.body as { t?: number };
       const container = fastify.docker.getContainer(id);
@@ -196,6 +206,7 @@ const containerRoutes: FastifyPluginAsync = async (fastify) => {
     },
   }, async (request) => {
     try {
+  assertNotSafeMode(fastify);
       const { id } = request.params as { id: string };
       const { signal = 'SIGKILL' } = request.body as { signal?: string };
       const container = fastify.docker.getContainer(id);
@@ -233,6 +244,7 @@ const containerRoutes: FastifyPluginAsync = async (fastify) => {
     },
   }, async (request) => {
     try {
+  assertNotSafeMode(fastify);
       const { id } = request.params as { id: string };
       const { force = false, v = false, link = false } = request.query as {
         force?: boolean;
@@ -253,6 +265,97 @@ const containerRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // Logs and stats streaming endpoints will be added later
+  // Logs streaming via WebSocket
+  fastify.get('/:id/logs', { websocket: true }, async (connection, req) => {
+    const { id } = req.params as any;
+    const q = req.query as any;
+    const options: any = {
+      follow: q.follow === 'true',
+      stdout: q.stdout !== 'false',
+      stderr: q.stderr !== 'false',
+      since: q.since ? Number(q.since) : undefined,
+      until: q.until ? Number(q.until) : undefined,
+      timestamps: q.timestamps === 'true',
+      tail: q.tail ?? 'all',
+    };
+
+    let closed = false;
+    (connection as any).socket.on('close', () => { closed = true; });
+
+    const container = fastify.docker.getContainer(id);
+    try {
+  const logStream: NodeJS.ReadableStream = await (container as any).logs({
+        ...options,
+        follow: true,
+        stdout: true,
+        stderr: true,
+        timestamps: options.timestamps,
+        tail: options.tail,
+      });
+
+      // demux stdout/stderr
+      const stdout = new PassThrough();
+      const stderr = new PassThrough();
+      (container as any).modem.demuxStream(logStream, stdout, stderr);
+
+      const send = (prefix: string) => (chunk: Buffer) => {
+        if (closed) return;
+        if (((connection as any).socket.bufferedAmount as number) > 1_000_000) return;
+        try {
+          (connection as any).socket.send(`${prefix}${chunk.toString()}`);
+        } catch {}
+      };
+
+      stdout.on('data', send('OUT '));
+      stderr.on('data', send('ERR '));
+
+      const cleanup = () => {
+        try { (logStream as any).destroy(); } catch {}
+        try { stdout.destroy(); } catch {}
+        try { stderr.destroy(); } catch {}
+      };
+      (connection as any).socket.on('close', cleanup);
+      logStream.on('error', cleanup);
+      logStream.on('end', cleanup);
+    } catch (e) {
+      fastify.log.error({ e }, 'logs stream failed');
+      try { (connection as any).socket.close(); } catch {}
+    }
+  });
+
+  // Stats streaming via WebSocket
+  fastify.get('/:id/stats', { websocket: true }, async (connection, req) => {
+    const { id } = req.params as any;
+    const q = req.query as any;
+    const stream = q.stream === 'true';
+
+    const container = fastify.docker.getContainer(id);
+    try {
+  const statsStream: NodeJS.ReadableStream = await (container as any).stats(stream ? { stream: true } : { stream: false });
+      const passthrough = new PassThrough();
+      statsStream.pipe(passthrough);
+
+      let closed = false;
+      (connection as any).socket.on('close', () => { closed = true; });
+
+      passthrough.on('data', (chunk: Buffer) => {
+        if (closed) return;
+        if (((connection as any).socket.bufferedAmount as number) > 1_000_000) return;
+        try { (connection as any).socket.send(chunk.toString()); } catch {}
+      });
+
+      const cleanup = () => {
+        try { (statsStream as any).destroy(); } catch {}
+        try { passthrough.destroy(); } catch {}
+      };
+      (connection as any).socket.on('close', cleanup);
+      statsStream.on('error', cleanup);
+      statsStream.on('end', cleanup);
+    } catch (e) {
+      fastify.log.error({ e }, 'stats stream failed');
+      try { (connection as any).socket.close(); } catch {}
+    }
+  });
 
   // Prune containers
   fastify.post('/prune', {
@@ -268,6 +371,7 @@ const containerRoutes: FastifyPluginAsync = async (fastify) => {
     },
   }, async (request) => {
     try {
+  assertNotSafeMode(fastify);
       const { filters } = request.body as { filters?: Record<string, string[]> };
       const result = await fastify.docker.pruneContainers({ filters });
       

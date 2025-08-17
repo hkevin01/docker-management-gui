@@ -1,4 +1,5 @@
 import { FastifyPluginAsync } from 'fastify';
+import { PassThrough } from 'stream';
 
 const systemRoutes: FastifyPluginAsync = async (fastify) => {
   // Get Docker system information
@@ -55,7 +56,54 @@ const systemRoutes: FastifyPluginAsync = async (fastify) => {
     }
   });
 
-  // Events streaming will be added later
+  // Docker events via WebSocket
+  fastify.get('/events', { websocket: true }, (connection, req) => {
+    const sinceStr = (req.query as any)?.since as string | undefined;
+    const untilStr = (req.query as any)?.until as string | undefined;
+    const filtersStr = (req.query as any)?.filters as string | undefined;
+    const filters = filtersStr ? JSON.parse(filtersStr) : undefined;
+    const since = sinceStr ? Number(sinceStr) : undefined;
+    const until = untilStr ? Number(untilStr) : undefined;
+
+    let closed = false;
+  (connection as any).socket.on('close', () => { closed = true; });
+
+  (fastify.docker as any).getEvents({ since, until, filters }, (err: any, stream: NodeJS.ReadableStream) => {
+      if (err) {
+        fastify.log.error({ err }, 'events stream error');
+  try { (connection as any).socket.close(); } catch {}
+        return;
+      }
+
+      const passthrough = new PassThrough();
+      stream.pipe(passthrough);
+
+      const sendChunk = (chunk: Buffer) => {
+        if (closed) return;
+        // basic backpressure using ws bufferedAmount
+  if (((connection as any).socket.bufferedAmount as number) > 1_000_000) {
+          // drop if too slow, could also implement queueing
+          return;
+        }
+        try {
+          (connection as any).socket.send(chunk.toString());
+        } catch (e) {
+          fastify.log.warn({ e }, 'events send failed');
+        }
+      };
+
+      passthrough.on('data', sendChunk);
+      passthrough.on('error', (e) => fastify.log.error({ e }, 'events passthrough error'));
+      passthrough.on('close', () => {
+  try { (connection as any).socket.close(); } catch {}
+      });
+
+  (connection as any).socket.on('close', () => {
+        try { (stream as any).destroy(); } catch {}
+        try { passthrough.destroy(); } catch {}
+      });
+    });
+  });
 
   // System prune
   fastify.post('/prune', {

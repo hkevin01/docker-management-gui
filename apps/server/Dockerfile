@@ -43,11 +43,16 @@ RUN pnpm --filter @docker-gui/server --prod deploy server-deploy
 FROM node:20-alpine AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
+# Create non-root user
+RUN addgroup -S app && adduser -S -G app app
 # Copy deployed package
 COPY --from=pruned /app/server-deploy .
+# Adjust ownership
+RUN chown -R app:app /app
 # Expose API port
 EXPOSE 3001
 # The server expects Docker socket mounted at /var/run/docker.sock (bind via compose)
 # Allow a bit more time for startup and Docker socket availability
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=5 CMD wget -qO- http://localhost:3001/api/health >/dev/null 2>&1 || exit 1
+USER app
 CMD ["node", "dist/index.js"]

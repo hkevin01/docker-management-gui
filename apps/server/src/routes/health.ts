@@ -1,4 +1,5 @@
 import { FastifyPluginAsync } from 'fastify';
+import fs from 'node:fs';
 
 const healthRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get('/health', {
@@ -19,6 +20,8 @@ const healthRoutes: FastifyPluginAsync = async (fastify) => {
     },
   }, async () => {
     let dockerHealthy = false;
+    let socketAccessible = false;
+    const socketPath = process.env.DOCKER_SOCKET_PATH || '/var/run/docker.sock';
     
     try {
       await fastify.docker.ping();
@@ -26,8 +29,15 @@ const healthRoutes: FastifyPluginAsync = async (fastify) => {
     } catch (error) {
       fastify.log.warn('Docker health check failed:', {
         error,
-        socketPath: process.env.DOCKER_SOCKET_PATH || '/var/run/docker.sock',
+        socketPath,
       });
+    }
+
+    try {
+      const stat = fs.statSync(socketPath);
+      socketAccessible = stat.isSocket();
+    } catch (e) {
+      socketAccessible = false;
     }
 
     return {
@@ -35,6 +45,10 @@ const healthRoutes: FastifyPluginAsync = async (fastify) => {
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
       docker: dockerHealthy,
+      dependencies: {
+        dockerSocket: socketAccessible,
+      },
+      safeMode: process.env.SAFE_MODE === 'true',
     };
   });
 };

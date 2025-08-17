@@ -1,5 +1,11 @@
 import { FastifyPluginAsync } from 'fastify';
 
+function assertNotSafeMode(fastify: any) {
+  if (process.env.SAFE_MODE === 'true') {
+    throw fastify.httpErrors.forbidden('Operation disabled in SAFE_MODE');
+  }
+}
+
 const volumeRoutes: FastifyPluginAsync = async (fastify) => {
   // List volumes
   fastify.get('/', {
@@ -75,6 +81,7 @@ const volumeRoutes: FastifyPluginAsync = async (fastify) => {
     },
   }, async (request) => {
     try {
+  assertNotSafeMode(fastify);
       const options = request.body as any;
       const volume = await fastify.docker.createVolume(options);
       
@@ -109,6 +116,7 @@ const volumeRoutes: FastifyPluginAsync = async (fastify) => {
     },
   }, async (request) => {
     try {
+  assertNotSafeMode(fastify);
       const { name } = request.params as { name: string };
       const { force = false } = request.query as { force?: boolean };
       
@@ -138,6 +146,7 @@ const volumeRoutes: FastifyPluginAsync = async (fastify) => {
     },
   }, async (request) => {
     try {
+  assertNotSafeMode(fastify);
       const { filters } = request.body as { filters?: Record<string, string[]> };
       const result = await fastify.docker.pruneVolumes({ filters });
       

@@ -10,6 +10,10 @@ services:
       - PORT=3001
       - HOST=0.0.0.0
       - DOCKER_SOCKET_PATH=/var/run/docker.sock
+      - SAFE_MODE=${SAFE_MODE:-false}
+      - RATE_LIMIT_MAX=${RATE_LIMIT_MAX:-200}
+      - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW:-1 minute}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     ports:

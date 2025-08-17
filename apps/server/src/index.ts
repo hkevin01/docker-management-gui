@@ -4,6 +4,7 @@ import sensible from '@fastify/sensible';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import websocket from '@fastify/websocket';
+import rateLimit from '@fastify/rate-limit';
 import { dockerPlugin } from './plugins/docker.js';
 import { healthRoutes } from './routes/health.js';
 import { systemRoutes } from './routes/system/index.js';
@@ -11,6 +12,7 @@ import { containerRoutes } from './routes/containers/index.js';
 import { imageRoutes } from './routes/images/index.js';
 import { volumeRoutes } from './routes/volumes/index.js';
 import { networkRoutes } from './routes/networks/index.js';
+import { metricsRoute } from './routes/metrics.js';
 
 const PORT = Number(process.env.PORT) || 3001;
 const HOST = process.env.HOST || 'localhost';
@@ -35,18 +37,32 @@ async function buildServer(options: BuildOptions = {}) {
   });
 
   // Register plugins
+  const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map((s) => s.trim()).filter(Boolean);
   await fastify.register(cors, {
-    origin: [
-      'http://localhost:5173', // Vite dev server
-      'http://localhost:3000', // React dev server
-      'http://localhost:4173', // Vite preview
-  'http://localhost:8080', // Nginx-served web container
-    ],
+    origin: (origin, cb) => {
+      if (!origin) return cb(null, true);
+      if (
+        allowedOrigins.length === 0 ||
+        allowedOrigins.includes(origin) ||
+        /^http:\/\/localhost:(5173|3000|4173|8080)$/.test(origin)
+      ) {
+        return cb(null, true);
+      }
+      cb(new Error('Not allowed by CORS'), false);
+    },
     credentials: true,
   });
 
   await fastify.register(sensible);
   await fastify.register(websocket);
+  await fastify.register(rateLimit, {
+    max: Number(process.env.RATE_LIMIT_MAX || 100),
+    timeWindow: process.env.RATE_LIMIT_WINDOW || '1 minute',
+    allowList: (req: any) => {
+      const ip = req.ip || '';
+      return ip === '127.0.0.1' || ip === '::1';
+    },
+  });
 
   await fastify.register(swagger, {
     openapi: {
@@ -109,6 +125,7 @@ async function buildServer(options: BuildOptions = {}) {
   await fastify.register(imageRoutes, { prefix: '/api/images' });
   await fastify.register(volumeRoutes, { prefix: '/api/volumes' });
   await fastify.register(networkRoutes, { prefix: '/api/networks' });
+  await fastify.register(metricsRoute, { prefix: '/' });
 
   return fastify;
 }

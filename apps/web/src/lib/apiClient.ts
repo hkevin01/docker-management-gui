@@ -17,7 +17,8 @@ class ApiClient {
   private baseURL: string
 
   constructor(baseURL: string = API_BASE_URL) {
-    this.baseURL = baseURL
+  const saved = typeof localStorage !== 'undefined' ? localStorage.getItem('apiBaseUrl') : null
+  this.baseURL = saved || baseURL
   }
 
   private async request<T>(
@@ -322,4 +323,10 @@ class ApiClient {
 }
 
 export const apiClient = new ApiClient()
+export function setApiBaseUrl(baseUrl: string) {
+  apiClient['baseURL'] = baseUrl
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem('apiBaseUrl', baseUrl)
+  }
+}
 export default apiClient

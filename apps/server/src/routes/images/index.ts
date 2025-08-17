@@ -1,5 +1,11 @@
 import { FastifyPluginAsync } from 'fastify';
 
+function assertNotSafeMode(fastify: any) {
+  if (process.env.SAFE_MODE === 'true') {
+    throw fastify.httpErrors.forbidden('Operation disabled in SAFE_MODE');
+  }
+}
+
 const imageRoutes: FastifyPluginAsync = async (fastify) => {
   // List images
   fastify.get('/', {
@@ -124,6 +130,7 @@ const imageRoutes: FastifyPluginAsync = async (fastify) => {
     },
   }, async (request) => {
     try {
+  assertNotSafeMode(fastify);
       const { id } = request.params as { id: string };
       const { force = false, noprune = false } = request.query as {
         force?: boolean;
@@ -157,6 +164,7 @@ const imageRoutes: FastifyPluginAsync = async (fastify) => {
     },
   }, async (request) => {
     try {
+  assertNotSafeMode(fastify);
       const { filters } = request.body as { filters?: Record<string, string[]> };
       const result = await fastify.docker.pruneImages({ filters });
       

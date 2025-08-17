@@ -1,5 +1,11 @@
 import { FastifyPluginAsync } from 'fastify';
 
+function assertNotSafeMode(fastify: any) {
+  if (process.env.SAFE_MODE === 'true') {
+    throw fastify.httpErrors.forbidden('Operation disabled in SAFE_MODE');
+  }
+}
+
 const networkRoutes: FastifyPluginAsync = async (fastify) => {
   // List networks
   fastify.get('/', {
@@ -77,6 +83,7 @@ const networkRoutes: FastifyPluginAsync = async (fastify) => {
     },
   }, async (request) => {
     try {
+  assertNotSafeMode(fastify);
       const options = request.body as any;
       const network = await fastify.docker.createNetwork(options);
       
@@ -105,6 +112,7 @@ const networkRoutes: FastifyPluginAsync = async (fastify) => {
     },
   }, async (request) => {
     try {
+  assertNotSafeMode(fastify);
       const { id } = request.params as { id: string };
       const network = fastify.docker.getNetwork(id);
       await network.remove();
@@ -141,6 +149,7 @@ const networkRoutes: FastifyPluginAsync = async (fastify) => {
     },
   }, async (request) => {
     try {
+  assertNotSafeMode(fastify);
       const { id } = request.params as { id: string };
       const options = request.body as any;
       const network = fastify.docker.getNetwork(id);
@@ -178,6 +187,7 @@ const networkRoutes: FastifyPluginAsync = async (fastify) => {
     },
   }, async (request) => {
     try {
+  assertNotSafeMode(fastify);
       const { id } = request.params as { id: string };
       const options = request.body as any;
       const network = fastify.docker.getNetwork(id);
@@ -206,6 +216,7 @@ const networkRoutes: FastifyPluginAsync = async (fastify) => {
     },
   }, async (request) => {
     try {
+  assertNotSafeMode(fastify);
       const { filters } = request.body as { filters?: Record<string, string[]> };
       const result = await fastify.docker.pruneNetworks({ filters });
       
