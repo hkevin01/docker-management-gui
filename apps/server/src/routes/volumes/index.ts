@@ -25,7 +25,33 @@ const volumeRoutes: FastifyPluginAsync = async (fastify) => {
       const options: any = {};
       if (filters) options.filters = JSON.parse(filters);
 
-      const result = await fastify.docker.listVolumes(options);
+      // Get volume list and disk usage data in parallel
+      const [volumeResult, dfResult] = await Promise.all([
+        fastify.docker.listVolumes(options),
+        fastify.docker.df().catch(() => null) // Don't fail if df is unavailable
+      ]);
+
+      // Create a map of volume sizes from df data
+      const volumeSizes: Record<string, { Size: number; RefCount: number }> = {};
+      if (dfResult?.Volumes) {
+        dfResult.Volumes.forEach((volume: any) => {
+          if (volume.Name) {
+            volumeSizes[volume.Name] = {
+              Size: volume.Size || 0,
+              RefCount: volume.Links || 0
+            };
+          }
+        });
+      }
+
+      // Enhance volume data with size information
+      const result = volumeResult as any;
+      if (result?.Volumes) {
+        result.Volumes = result.Volumes.map((volume: any) => ({
+          ...volume,
+          UsageData: volumeSizes[volume.Name] || { Size: 0, RefCount: 0 }
+        }));
+      }
       
       return {
         success: true,

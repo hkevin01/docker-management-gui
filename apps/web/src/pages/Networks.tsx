@@ -25,6 +25,13 @@ import {
   Tooltip,
   Stack,
   CircularProgress,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material'
 import {
   Delete as DeleteIcon,
@@ -32,6 +39,11 @@ import {
   DeleteSweep as DeleteSweepIcon,
   Refresh as RefreshIcon,
   NetworkCheck as NetworkIcon,
+  ExpandMore as ExpandMoreIcon,
+  Info as InfoIcon,
+  Cable as CableIcon,
+  Computer as ComputerIcon,
+  Block as BlockIcon,
 } from '@mui/icons-material'
 import { useNetworks, useRemoveNetwork, usePruneNetworks } from '../lib/hooks'
 
@@ -181,6 +193,108 @@ function NetworksPage() {
       <Typography variant="h4" gutterBottom>
         Networks
       </Typography>
+      
+      <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+        Networks enable communication between Docker containers and the outside world. They provide isolation, 
+        connectivity, and routing capabilities for containerized applications.
+      </Typography>
+
+      <Accordion sx={{ mb: 2 }}>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <InfoIcon color="primary" />
+            <Typography variant="h6">Network Types Information</Typography>
+          </Stack>
+        </AccordionSummary>
+        <AccordionDetails>
+          <List>
+            <ListItem 
+              sx={{ 
+                borderRadius: 1,
+                transition: 'background-color 0.2s ease-in-out',
+                '&:hover': { 
+                  backgroundColor: 'primary.50',
+                  cursor: 'pointer',
+                  transform: 'translateX(4px)'
+                }
+              }}
+            >
+              <ListItemIcon>
+                <CableIcon color="primary" />
+              </ListItemIcon>
+              <ListItemText
+                primary="Bridge Network"
+                secondary={
+                  <Box>
+                    <Typography variant="body2" color="text.secondary" paragraph>
+                      The default network driver for containers. Creates an isolated network segment where containers can communicate with each other using internal IP addresses.
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      <strong>Key Features:</strong> Container-to-container communication, port mapping to host, network isolation from other bridge networks, automatic DNS resolution between containers, and support for custom bridge networks with advanced configuration options.
+                    </Typography>
+                  </Box>
+                }
+              />
+            </ListItem>
+            <ListItem 
+              sx={{ 
+                borderRadius: 1,
+                transition: 'background-color 0.2s ease-in-out',
+                '&:hover': { 
+                  backgroundColor: 'warning.50',
+                  cursor: 'pointer',
+                  transform: 'translateX(4px)'
+                }
+              }}
+            >
+              <ListItemIcon>
+                <ComputerIcon color="warning" />
+              </ListItemIcon>
+              <ListItemText
+                primary="Host Network"
+                secondary={
+                  <Box>
+                    <Typography variant="body2" color="text.secondary" paragraph>
+                      Removes network isolation completely - the container shares the host's network stack directly, using the same IP address and network interfaces as the host system.
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      <strong>Use Cases:</strong> High-performance networking requirements, legacy applications, network monitoring tools. <strong>Limitations:</strong> Linux only, potential security risks, port conflicts, reduced container portability.
+                    </Typography>
+                  </Box>
+                }
+              />
+            </ListItem>
+            <ListItem 
+              sx={{ 
+                borderRadius: 1,
+                transition: 'background-color 0.2s ease-in-out',
+                '&:hover': { 
+                  backgroundColor: 'action.hover',
+                  cursor: 'pointer',
+                  transform: 'translateX(4px)'
+                }
+              }}
+            >
+              <ListItemIcon>
+                <BlockIcon color="action" />
+              </ListItemIcon>
+              <ListItemText
+                primary="None Network"
+                secondary={
+                  <Box>
+                    <Typography variant="body2" color="text.secondary" paragraph>
+                      Completely disables networking for the container. The container has no network interfaces except for a loopback device.
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      <strong>Use Cases:</strong> Isolated processing tasks, security-sensitive applications, containers that only need local file system access.
+                    </Typography>
+                  </Box>
+                }
+              />
+            </ListItem>
+          </List>
+        </AccordionDetails>
+      </Accordion>
 
       {isLoading && <Alert severity="info">Loading networks…</Alert>}
       {error && <Alert severity="error">Failed to load networks</Alert>}

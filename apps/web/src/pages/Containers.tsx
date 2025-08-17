@@ -190,14 +190,18 @@ function ContainersPage() {
       open: true,
       title: 'Remove Selected Containers',
       message: `Are you sure you want to remove ${selected.length} selected container(s)? ${force ? 'This will force remove the containers.' : ''}`,
-      action: () => {
-        Promise.all(
-          selected.map(containerId =>
-            removeContainerMutation.mutateAsync({ id: containerId, options: { force } })
+      action: async () => {
+        try {
+          await Promise.all(
+            selected.map(containerId =>
+              removeContainerMutation.mutateAsync({ id: containerId, options: { force } })
+            )
           )
-        ).then(() => {
           setSelected([])
-        })
+          refetch()
+        } catch (error) {
+          console.error('Error removing containers:', error)
+        }
       }
     })
   }
@@ -247,6 +251,11 @@ function ContainersPage() {
     <Box>
       <Typography variant="h4" gutterBottom>
         Containers
+      </Typography>
+      
+      <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+        Containers are lightweight, portable, and isolated environments that run applications and their dependencies. 
+        They are created from Docker images and can be started, stopped, or removed as needed.
       </Typography>
 
       {isLoading && <Alert severity="info">Loading containers…</Alert>}
@@ -451,9 +460,12 @@ function ContainersPage() {
             Cancel
           </Button>
           <Button
-            onClick={() => {
-              confirmDialog.action()
-              setConfirmDialog({ ...confirmDialog, open: false })
+            onClick={async () => {
+              try {
+                await confirmDialog.action()
+              } finally {
+                setConfirmDialog({ ...confirmDialog, open: false })
+              }
             }}
             color="error"
             autoFocus

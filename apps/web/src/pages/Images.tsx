@@ -174,6 +174,11 @@ function ImagesPage() {
       <Typography variant="h4" gutterBottom>
         Images
       </Typography>
+      
+      <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+        Images are read-only templates used to create containers. They contain the application code, runtime, 
+        system tools, libraries, and settings needed to run an application.
+      </Typography>
 
       {isLoading && <Alert severity="info">Loading images…</Alert>}
       {error && <Alert severity="error">Failed to load images</Alert>}

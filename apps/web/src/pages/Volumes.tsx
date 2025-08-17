@@ -35,6 +35,17 @@ import {
 } from '@mui/icons-material'
 import { useVolumes, useRemoveVolume, usePruneVolumes } from '../lib/hooks'
 
+// Utility function to format bytes into human-readable size
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 B'
+  
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`
+}
+
 function VolumesPage() {
   const { data, isLoading, error, refetch } = useVolumes()
   const [selected, setSelected] = useState<string[]>([])
@@ -161,6 +172,11 @@ function VolumesPage() {
       <Typography variant="h4" gutterBottom>
         Volumes
       </Typography>
+      
+      <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+        Volumes are persistent storage mechanisms that allow data to survive container restarts and be shared 
+        between containers. They are managed by Docker and stored outside the container's filesystem.
+      </Typography>
 
       {isLoading && <Alert severity="info">Loading volumes…</Alert>}
       {error && <Alert severity="error">Failed to load volumes</Alert>}
@@ -216,6 +232,7 @@ function VolumesPage() {
                     <TableCell>Volume Name</TableCell>
                     <TableCell>Driver</TableCell>
                     <TableCell>Scope</TableCell>
+                    <TableCell>Size</TableCell>
                     <TableCell>Mountpoint</TableCell>
                     <TableCell>Created</TableCell>
                     <TableCell>Actions</TableCell>
@@ -252,6 +269,23 @@ function VolumesPage() {
                           />
                         </TableCell>
                         <TableCell>{getVolumeScope(volume.Scope)}</TableCell>
+                        <TableCell>
+                          {volume.UsageData?.Size !== undefined ? (
+                            <Chip
+                              label={formatFileSize(volume.UsageData.Size)}
+                              size="small"
+                              color="primary"
+                              variant="outlined"
+                            />
+                          ) : (
+                            <Chip
+                              label="N/A"
+                              size="small"
+                              variant="outlined"
+                              color="default"
+                            />
+                          )}
+                        </TableCell>
                         <TableCell>
                           <code style={{ fontSize: '0.75rem' }}>
                             {volume.Mountpoint}
