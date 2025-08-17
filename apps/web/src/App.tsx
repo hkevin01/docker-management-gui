@@ -99,7 +99,6 @@ function App() {
           <Route path="/networks" element={<NetworksPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/logs" element={<LogsViewerPage />} />
-          <Route path="/logs" element={<LogsViewerPage />} />
         </Routes>
       </Box>
     </Box>

@@ -11,9 +11,9 @@
     "clean": "rm -rf dist",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write src/**/*.ts",
-    "test": "vitest",
-    "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+  "test": "vitest",
+  "test:run": "vitest run",
+  "test:coverage": "vitest run --coverage --reporter=default"
   },
   "dependencies": {
     "@docker-gui/shared-types": "workspace:*",
