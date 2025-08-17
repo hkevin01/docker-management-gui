@@ -43,8 +43,10 @@ RUN pnpm --filter @docker-gui/server --prod deploy server-deploy
 FROM node:20-alpine AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
-# Create non-root user
-RUN addgroup -S app && adduser -S -G app app
+# Create non-root user and docker group with host's Docker GID
+RUN addgroup -S app && adduser -S -G app app \
+    && addgroup -g 984 docker \
+    && addgroup app docker
 # Copy deployed package
 COPY --from=pruned /app/server-deploy .
 # Adjust ownership
