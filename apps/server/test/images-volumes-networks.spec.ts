@@ -42,14 +42,32 @@ describe('images/volumes/networks routes', () => {
     expect(res.json().success).toBe(true);
   });
 
+  it('gets image details', async () => {
+    const res = await server.inject({ method: 'GET', url: '/api/images/img1' });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().success).toBe(true);
+  });
+
   it('lists volumes', async () => {
     const res = await server.inject({ method: 'GET', url: '/api/volumes' });
     expect(res.statusCode).toBe(200);
     expect(res.json().success).toBe(true);
   });
 
+  it('gets volume details', async () => {
+    const res = await server.inject({ method: 'GET', url: '/api/volumes/vol1' });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().success).toBe(true);
+  });
+
   it('lists networks', async () => {
     const res = await server.inject({ method: 'GET', url: '/api/networks' });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().success).toBe(true);
+  });
+
+  it('gets network details', async () => {
+    const res = await server.inject({ method: 'GET', url: '/api/networks/net1' });
     expect(res.statusCode).toBe(200);
     expect(res.json().success).toBe(true);
   });
@@ -91,5 +109,14 @@ describe('images/volumes/networks routes', () => {
     // even in SAFE_MODE this should not be blocked because it's non-destructive by policy
     expect(res.statusCode).toBe(200);
     expect(res.json().success).toBe(true);
+  });
+
+  it('blocks prune endpoints in SAFE_MODE', async () => {
+    const img = await server.inject({ method: 'POST', url: '/api/images/prune', payload: { filters: {} } });
+    expect(img.statusCode).toBe(403);
+    const vol = await server.inject({ method: 'POST', url: '/api/volumes/prune', payload: { filters: {} } });
+    expect(vol.statusCode).toBe(403);
+    const net = await server.inject({ method: 'POST', url: '/api/networks/prune', payload: { filters: {} } });
+    expect(net.statusCode).toBe(403);
   });
 });

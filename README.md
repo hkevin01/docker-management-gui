@@ -39,29 +39,33 @@ docker ps
 ## Quick Start
 
 1. **Install dependencies**
+
 ```bash
 pnpm install
 ```
 
-2. **Set up environment**
+1. **Set up environment**
+
 ```bash
 cp .env.example .env
 # Edit .env if needed
 ```
 
-3. **Start development servers**
+1. **Start development servers**
+
 ```bash
 pnpm dev
 ```
 
 This will start:
-- Backend API server on http://localhost:3001
-- Frontend dev server on http://localhost:5173
-- API documentation at http://localhost:3001/docs
+
+- Backend API server on <http://localhost:3001>
+- Frontend dev server on <http://localhost:5173>
+- API documentation at <http://localhost:3001/docs>
 
 ## Project Structure
 
-```
+```text
 docker-management-gui/
 ├── apps/
 │   ├── server/          # Fastify API server
@@ -84,6 +88,7 @@ docker-management-gui/
 ## API Endpoints
 
 ### System
+
 - `GET /api/health` - Health check
 - `GET /api/system/info` - Docker system information
 - `GET /api/system/df` - Disk usage information
@@ -91,6 +96,7 @@ docker-management-gui/
 - `WS /api/system/events` - Live Docker events
 
 ### Containers
+
 - `GET /api/containers` - List containers
 - `GET /api/containers/:id` - Get container details
 - `POST /api/containers/:id/start` - Start container
@@ -102,18 +108,21 @@ docker-management-gui/
 - `POST /api/containers/prune` - Prune containers
 
 ### Images
+
 - `GET /api/images` - List images
 - `POST /api/images/pull` - Pull image
 - `DELETE /api/images/:id` - Remove image
 - `POST /api/images/prune` - Prune images
 
 ### Volumes
+
 - `GET /api/volumes` - List volumes
 - `POST /api/volumes` - Create volume
 - `DELETE /api/volumes/:name` - Remove volume
 - `POST /api/volumes/prune` - Prune volumes
 
 ### Networks
+
 - `GET /api/networks` - List networks
 - `POST /api/networks` - Create network
 - `DELETE /api/networks/:id` - Remove network
@@ -168,6 +177,32 @@ VITE_API_URL=http://localhost:3001/api
 - Consider running in docker group or with appropriate sudo access
 - The API runs on localhost by default - configure firewalls appropriately
 
+### SAFE_MODE, Rate Limiting, and CORS
+
+- SAFE_MODE: Set `SAFE_MODE=true` to block destructive operations (delete/prune/kill/etc.). Non-destructive reads still work. Useful for demos and CI.
+- Rate limiting: Configure `RATE_LIMIT_MAX` and `RATE_LIMIT_WINDOW` (e.g., `200` and `1 minute`) to throttle abusive clients. Localhost is allow-listed.
+- CORS: Provide a comma-separated `ALLOWED_ORIGINS` to explicitly allow origins in addition to common localhost dev ports.
+
+### Metrics
+
+- Prometheus metrics are exposed at `GET /metrics` with default Node/system metrics plus `http_requests_total{method,route,status}`. Scrape the server service (port 3001).
+
+### E2E Testing (Playwright)
+
+GitHub Actions runs Playwright E2E tests against the docker-compose stack. To run locally:
+
+```bash
+# Build and start stack
+docker compose up -d --build
+
+# Install browsers
+cd apps/web
+pnpm exec playwright install --with-deps
+
+# Run tests
+pnpm run test:e2e
+```
+
 ## Building for Production
 
 ```bash
@@ -201,6 +236,7 @@ docker compose down
 ```
 
 Notes:
+
 - The web UI is served by nginx on port 8080 and proxies API calls to the server service.
 - The API runs on port 3001 and requires access to /var/run/docker.sock provided by compose.
 - The frontend defaults to using a relative API base path `/api`; override with `VITE_API_URL` for non-proxied setups.
@@ -248,6 +284,7 @@ MIT License - see LICENSE file for details
 ## Troubleshooting
 
 ### Docker Connection Issues
+
 ```bash
 # Check Docker daemon
 sudo systemctl status docker
@@ -260,11 +297,13 @@ sudo usermod -aG docker $USER
 ```
 
 ### Port Conflicts
+
 - Backend default: 3001
 - Frontend default: 5173
 - Change ports in .env file if needed
 
 ### Permission Issues
+
 - Ensure user has Docker access
 - Check if Docker daemon is running
 - Verify socket path in configuration
