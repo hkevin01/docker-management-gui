@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 // Minimal smoke test to validate the SPA renders and navigation works
  test('loads app shell and navigates', async ({ page, baseURL }) => {
-  await page.goto(baseURL || 'http://localhost:8080');
+  await page.goto(baseURL || 'http://localhost:8086');
 
   await expect(page.getByText('Docker Management GUI')).toBeVisible();
 

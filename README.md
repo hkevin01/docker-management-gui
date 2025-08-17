@@ -229,7 +229,7 @@ docker compose up -d
 
 # Check
 curl -s http://localhost:3001/api/health | jq
-open http://localhost:8080
+open http://localhost:8086
 
 # Stop
 docker compose down
@@ -237,7 +237,7 @@ docker compose down
 
 Notes:
 
-- The web UI is served by nginx on port 8080 and proxies API calls to the server service.
+- The web UI is served by nginx on port 8086 and proxies API calls to the server service.
 - The API runs on port 3001 and requires access to /var/run/docker.sock provided by compose.
 - The frontend defaults to using a relative API base path `/api`; override with `VITE_API_URL` for non-proxied setups.
 

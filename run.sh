@@ -17,7 +17,7 @@ warn()  { printf "\033[1;33m[WARN]\033[0m  %s\n" "$*"; }
 error() { printf "\033[1;31m[ERROR]\033[0m %s\n" "$*"; }
 
 API_URL="http://localhost:3001/api/health"
-WEB_URL="http://localhost:8080"
+WEB_URL="http://localhost:8086"
 
 # 1) Basic checks
 if ! command_exists docker; then

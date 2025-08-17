@@ -44,7 +44,7 @@ async function buildServer(options: BuildOptions = {}) {
       if (
         allowedOrigins.length === 0 ||
         allowedOrigins.includes(origin) ||
-        /^http:\/\/localhost:(5173|3000|4173|8080)$/.test(origin)
+        /^http:\/\/localhost:(5173|3000|4173|8086)$/.test(origin)
       ) {
         return cb(null, true);
       }
