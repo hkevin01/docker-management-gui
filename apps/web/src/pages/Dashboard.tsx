@@ -10,14 +10,13 @@ import {
   Chip,
 } from '@mui/material'
 import {
-  ViewInAr,
   Image,
   Storage,
-  DeviceHub,
   PlayArrow,
   Stop,
 } from '@mui/icons-material'
 import { useSystemInfo, useSystemDf, useContainers, useImages, useVolumes, useNetworks } from '../lib/hooks'
+import type { DockerSystemInfo, DockerSystemDf, DockerContainer, DockerImage, DockerVolume, DockerNetwork } from '@docker-gui/shared-types'
 
 function StatCard({ 
   title, 
@@ -73,12 +72,12 @@ function DashboardPage() {
     )
   }
 
-  const dockerInfo = systemInfo?.data
-  const diskUsage = systemDf?.data
-  const containerList = containers?.data || []
-  const imageList = images?.data || []
-  const volumeList = volumes?.data?.Volumes || []
-  const networkList = networks?.data || []
+  const dockerInfo = systemInfo?.data as DockerSystemInfo | undefined
+  const diskUsage = systemDf?.data as DockerSystemDf | undefined
+  const containerList = (containers?.data || []) as DockerContainer[]
+  const imageList = (images?.data || []) as DockerImage[]
+  const volumeList = (volumes?.data?.Volumes || []) as DockerVolume[]
+  const networkList = (networks?.data || []) as DockerNetwork[]
 
   const runningContainers = containerList.filter((c: any) => c.State === 'running').length
   const stoppedContainers = containerList.filter((c: any) => c.State === 'exited').length
@@ -89,7 +88,7 @@ function DashboardPage() {
         Docker Dashboard
       </Typography>
 
-      {dockerInfo && (
+  {dockerInfo && (
         <Box mb={3}>
           <Typography variant="h6" gutterBottom>
             System Information
@@ -190,7 +189,7 @@ function DashboardPage() {
           </Card>
         </Grid>
 
-        {diskUsage && (
+  {diskUsage && (
           <Grid item xs={12} md={6}>
             <Card>
               <CardContent>
@@ -201,14 +200,14 @@ function DashboardPage() {
                   <Box display="flex" justifyContent="space-between" alignItems="center">
                     <Typography variant="body2">Build Cache:</Typography>
                     <Chip 
-                      label={`${(diskUsage.BuildCache?.reduce((acc: number, item: any) => acc + item.Size, 0) / 1024 / 1024 / 1024).toFixed(2)} GB`} 
+                      label={`${(((diskUsage.BuildCache?.reduce((acc, item) => acc + item.Size, 0) ?? 0) / 1024 / 1024 / 1024)).toFixed(2)} GB`} 
                       color="secondary" 
                     />
                   </Box>
                   <Box display="flex" justifyContent="space-between" alignItems="center">
                     <Typography variant="body2">Layers:</Typography>
                     <Chip 
-                      label={`${(diskUsage.LayersSize / 1024 / 1024 / 1024).toFixed(2)} GB`} 
+                      label={`${(((diskUsage.LayersSize ?? 0) / 1024 / 1024 / 1024)).toFixed(2)} GB`} 
                       color="secondary" 
                     />
                   </Box>

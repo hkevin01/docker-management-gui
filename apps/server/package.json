@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Fastify server for Docker GUI",
   "main": "dist/index.js",
+  "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
@@ -10,9 +11,9 @@
     "clean": "rm -rf dist",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write src/**/*.ts",
-  "test": "vitest",
-  "test:run": "vitest run",
-  "test:coverage": "vitest run --coverage"
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@docker-gui/shared-types": "workspace:*",

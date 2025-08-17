@@ -130,7 +130,13 @@ async function start() {
   }
 }
 
-if (require.main === module) {
+// Start server only when executed directly (works for both CJS and ESM builds)
+const isDirectRun = typeof require !== 'undefined'
+  ? require.main === module // CommonJS
+  : (typeof import.meta !== 'undefined' && typeof process !== 'undefined' &&
+     `file://${process.argv[1]}` === (import.meta as any).url); // ESM
+
+if (isDirectRun) {
   start();
 }
 

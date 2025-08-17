@@ -2,12 +2,16 @@
 // and via Vite proxy in development. Override with VITE_API_URL when needed.
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
 
-export interface ApiResponse<T = any> {
-  success: boolean
-  data?: T
-  error?: string
-  message?: string
-}
+import type {
+  ApiResponse,
+  DockerSystemInfo as SystemInfo,
+  DockerSystemDf as DiskUsage,
+  DockerContainer as ContainerSummary,
+  DockerImage as ImageSummary,
+  DockerVolume as VolumeSummary,
+} from '@docker-gui/shared-types'
+
+// Use shared ApiResponse
 
 class ApiClient {
   private baseURL: string
@@ -47,16 +51,17 @@ class ApiClient {
 
   // Health
   async getHealth() {
-    return this.request('/health')
+  type Health = { status: string; timestamp: string; uptime: number; docker: boolean }
+  return this.request<Health>('/health')
   }
 
   // System
   async getSystemInfo() {
-    return this.request('/system/info')
+    return this.request<SystemInfo>('/system/info')
   }
 
   async getSystemDf() {
-    return this.request('/system/df')
+    return this.request<DiskUsage>('/system/df')
   }
 
   async pruneSystem(filters?: Record<string, string[]>) {
@@ -80,11 +85,11 @@ class ApiClient {
     if (params?.filters) searchParams.set('filters', JSON.stringify(params.filters))
     
     const query = searchParams.toString()
-    return this.request(`/containers${query ? `?${query}` : ''}`)
+  return this.request<ContainerSummary[]>(`/containers${query ? `?${query}` : ''}`)
   }
 
   async getContainer(id: string) {
-    return this.request(`/containers/${id}`)
+    return this.request<any>(`/containers/${id}`)
   }
 
   async startContainer(id: string) {
@@ -143,11 +148,11 @@ class ApiClient {
     if (params?.filters) searchParams.set('filters', JSON.stringify(params.filters))
     
     const query = searchParams.toString()
-    return this.request(`/images${query ? `?${query}` : ''}`)
+  return this.request<ImageSummary[]>(`/images${query ? `?${query}` : ''}`)
   }
 
   async getImage(id: string) {
-    return this.request(`/images/${id}`)
+    return this.request<any>(`/images/${id}`)
   }
 
   async removeImage(id: string, options?: { force?: boolean; noprune?: boolean }) {
@@ -174,7 +179,8 @@ class ApiClient {
     if (filters) searchParams.set('filters', JSON.stringify(filters))
     
     const query = searchParams.toString()
-    return this.request(`/volumes${query ? `?${query}` : ''}`)
+  // Docker API returns { Volumes: Volume[], Warnings?: string[] }
+  return this.request<{ Volumes: VolumeSummary[]; Warnings?: string[] }>(`/volumes${query ? `?${query}` : ''}`)
   }
 
   async getVolume(name: string) {
@@ -220,7 +226,7 @@ class ApiClient {
   }
 
   async getNetwork(id: string) {
-    return this.request(`/networks/${id}`)
+    return this.request<any>(`/networks/${id}`)
   }
 
   async createNetwork(options: {

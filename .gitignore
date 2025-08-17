@@ -45,6 +45,13 @@ pids
 # Coverage directory used by tools like istanbul
 coverage/
 *.lcov
+.nyc_output/
+
+# pnpm store
+.pnpm-store/
+
+# Turbo / cache
+.turbo/
 
 # nyc test coverage
 .nyc_output

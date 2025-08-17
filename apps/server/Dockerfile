@@ -48,5 +48,6 @@ COPY --from=pruned /app/server-deploy .
 # Expose API port
 EXPOSE 3001
 # The server expects Docker socket mounted at /var/run/docker.sock (bind via compose)
-HEALTHCHECK --interval=30s --timeout=3s CMD wget -qO- http://localhost:3001/api/health || exit 1
+# Allow a bit more time for startup and Docker socket availability
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=5 CMD wget -qO- http://localhost:3001/api/health >/dev/null 2>&1 || exit 1
 CMD ["node", "dist/index.js"]

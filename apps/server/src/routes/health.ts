@@ -24,7 +24,10 @@ const healthRoutes: FastifyPluginAsync = async (fastify) => {
       await fastify.docker.ping();
       dockerHealthy = true;
     } catch (error) {
-      fastify.log.warn('Docker health check failed:', error);
+      fastify.log.warn('Docker health check failed:', {
+        error,
+        socketPath: process.env.DOCKER_SOCKET_PATH || '/var/run/docker.sock',
+      });
     }
 
     return {

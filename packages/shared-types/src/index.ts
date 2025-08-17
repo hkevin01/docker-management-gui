@@ -376,3 +376,19 @@ export interface AppSettings {
   autoRefresh: boolean;
   logLevel: 'debug' | 'info' | 'warn' | 'error';
 }
+
+// Convenience aliases used by the web app
+export type SystemInfo = DockerSystemInfo;
+export type DiskUsage = DockerSystemDf;
+export type ContainerSummary = DockerContainer;
+export type ImageSummary = DockerImage;
+export type VolumeSummary = DockerVolume;
+export type NetworkSummary = DockerNetwork;
+
+// Health endpoint response (unwrapped)
+export interface HealthResponse {
+  status: 'ok' | 'degraded' | 'error' | string;
+  timestamp: string;
+  uptime: number;
+  docker: boolean;
+}

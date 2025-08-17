@@ -5,7 +5,7 @@ import { apiClient } from './apiClient'
 export const useSystemInfo = () => {
   return useQuery({
     queryKey: ['system', 'info'],
-    queryFn: () => apiClient.getSystemInfo(),
+  queryFn: () => apiClient.getSystemInfo(),
     staleTime: 1000 * 60 * 5, // 5 minutes
   })
 }
@@ -13,7 +13,7 @@ export const useSystemInfo = () => {
 export const useSystemDf = () => {
   return useQuery({
     queryKey: ['system', 'df'],
-    queryFn: () => apiClient.getSystemDf(),
+  queryFn: () => apiClient.getSystemDf(),
     staleTime: 1000 * 30, // 30 seconds
   })
 }
@@ -27,7 +27,7 @@ export const useContainers = (params?: {
 }) => {
   return useQuery({
     queryKey: ['containers', params],
-    queryFn: () => apiClient.getContainers(params),
+  queryFn: () => apiClient.getContainers(params),
     staleTime: 1000 * 10, // 10 seconds
   })
 }

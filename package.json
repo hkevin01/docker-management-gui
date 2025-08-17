@@ -17,6 +17,8 @@
   "test": "pnpm --recursive run test",
   "test:server": "pnpm --filter @docker-gui/server run test",
   "test:server:run": "pnpm --filter @docker-gui/server run test:run",
+    "typecheck:web": "pnpm --filter @docker-gui/web run type-check",
+    "build:web": "pnpm --filter @docker-gui/web build",
     "lint": "pnpm --recursive lint",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "clean": "pnpm --recursive clean && rm -rf node_modules",
