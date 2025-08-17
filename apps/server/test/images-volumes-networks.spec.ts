@@ -53,4 +53,43 @@ describe('images/volumes/networks routes', () => {
     expect(res.statusCode).toBe(200);
     expect(res.json().success).toBe(true);
   });
+
+  it('blocks destructive image delete in SAFE_MODE', async () => {
+    const res = await server.inject({ method: 'DELETE', url: '/api/images/img1' });
+    expect(res.statusCode).toBe(403);
+  });
+
+  it('blocks volume delete in SAFE_MODE', async () => {
+    const res = await server.inject({ method: 'DELETE', url: '/api/volumes/vol1' });
+    expect(res.statusCode).toBe(403);
+  });
+
+  it('blocks network delete in SAFE_MODE', async () => {
+    const res = await server.inject({ method: 'DELETE', url: '/api/networks/net1' });
+    expect(res.statusCode).toBe(403);
+  });
+
+  it('allows non-destructive create endpoints', async () => {
+    // create volume
+    const resVol = await server.inject({ method: 'POST', url: '/api/volumes', payload: { Name: 'newvol' } });
+    expect(resVol.statusCode).toBe(403); // blocked because SAFE_MODE true
+
+    // create network
+    const resNet = await server.inject({ method: 'POST', url: '/api/networks', payload: { Name: 'newnet' } });
+    expect(resNet.statusCode).toBe(403); // blocked because SAFE_MODE true
+  });
+
+  it('blocks network connect/disconnect in SAFE_MODE', async () => {
+    const connect = await server.inject({ method: 'POST', url: '/api/networks/net1/connect', payload: { Container: 'abc' } });
+    expect(connect.statusCode).toBe(403);
+    const disconnect = await server.inject({ method: 'POST', url: '/api/networks/net1/disconnect', payload: { Container: 'abc' } });
+    expect(disconnect.statusCode).toBe(403);
+  });
+
+  it('can invoke image pull (non-destructive) endpoint', async () => {
+    const res = await server.inject({ method: 'POST', url: '/api/images/pull', payload: { repoTag: 'alpine', tag: 'latest' } });
+    // even in SAFE_MODE this should not be blocked because it's non-destructive by policy
+    expect(res.statusCode).toBe(200);
+    expect(res.json().success).toBe(true);
+  });
 });

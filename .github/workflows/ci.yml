@@ -27,5 +27,5 @@ jobs:
         run: pnpm --filter @docker-gui/shared-types build
       - name: Type-check web
         run: pnpm --filter @docker-gui/web run type-check
-      - name: Run server unit tests
-        run: pnpm --filter @docker-gui/server run test:run
+      - name: Run server unit tests with coverage
+        run: pnpm --filter @docker-gui/server run test:coverage

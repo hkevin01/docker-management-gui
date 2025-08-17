@@ -1,6 +1,6 @@
 import { Routes, Route } from 'react-router-dom'
 import { Box, AppBar, Toolbar, Typography, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, useTheme } from '@mui/material'
-import { Dashboard, ViewInAr, Image, Storage, DeviceHub, Settings, Terminal } from '@mui/icons-material'
+import { Dashboard, ViewInAr, Image, Storage, DeviceHub, Settings, Terminal, Timeline } from '@mui/icons-material'
 import DashboardPage from './pages/Dashboard'
 import ContainersPage from './pages/Containers'
 import ImagesPage from './pages/Images'
@@ -8,6 +8,8 @@ import VolumesPage from './pages/Volumes'
 import NetworksPage from './pages/Networks'
 import SettingsPage from './pages/Settings'
 import LogsViewerPage from './pages/LogsViewer'
+import StatsViewerPage from './pages/StatsViewer'
+import EventsViewerPage from './pages/EventsViewer'
 
 const drawerWidth = 240
 
@@ -19,6 +21,8 @@ const menuItems = [
   { path: '/networks', label: 'Networks', icon: DeviceHub },
   { path: '/settings', label: 'Settings', icon: Settings },
   { path: '/logs', label: 'Logs (WS)', icon: Terminal },
+  { path: '/stats', label: 'Stats (WS)', icon: Timeline },
+  { path: '/events', label: 'Events (WS)', icon: Timeline },
 ]
 
 function App() {
@@ -99,6 +103,8 @@ function App() {
           <Route path="/networks" element={<NetworksPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/logs" element={<LogsViewerPage />} />
+          <Route path="/stats" element={<StatsViewerPage />} />
+          <Route path="/events" element={<EventsViewerPage />} />
         </Routes>
       </Box>
     </Box>
