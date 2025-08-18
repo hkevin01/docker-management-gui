@@ -18,7 +18,8 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
-      - "3001:3001"
+      # Expose server on a different host port to avoid conflicts with local dev
+      - "3002:3001"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://0.0.0.0:3001/api/health"]
       interval: 30s
@@ -33,6 +34,7 @@ services:
       dockerfile: apps/web/Dockerfile
     container_name: docker-gui-web
     environment:
+      # Frontend talks to backend via Nginx proxy /api within the web container
       - VITE_API_URL=/api
     depends_on:
       server:

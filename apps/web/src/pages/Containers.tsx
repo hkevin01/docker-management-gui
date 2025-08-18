@@ -52,6 +52,9 @@ function ContainersPage() {
   const [selected, setSelected] = useState<string[]>([])
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const [menuContainerId, setMenuContainerId] = useState<string>('')
+  const [operatingContainers, setOperatingContainers] = useState<{
+    [key: string]: 'starting' | 'stopping' | 'restarting' | 'killing' | 'removing'
+  }>({})
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean
     title: string
@@ -112,17 +115,59 @@ function ContainersPage() {
   }
 
   const handleStartContainer = (containerId: string) => {
-    startContainerMutation.mutate(containerId)
+    setOperatingContainers(prev => ({ ...prev, [containerId]: 'starting' }))
+    startContainerMutation.mutate(containerId, {
+      onSuccess: () => {
+        setOperatingContainers(prev => {
+          const { [containerId]: _, ...rest } = prev
+          return rest
+        })
+      },
+      onError: () => {
+        setOperatingContainers(prev => {
+          const { [containerId]: _, ...rest } = prev
+          return rest
+        })
+      }
+    })
     handleMenuClose()
   }
 
   const handleStopContainer = (containerId: string) => {
-    stopContainerMutation.mutate({ id: containerId })
+    setOperatingContainers(prev => ({ ...prev, [containerId]: 'stopping' }))
+    stopContainerMutation.mutate({ id: containerId }, {
+      onSuccess: () => {
+        setOperatingContainers(prev => {
+          const { [containerId]: _, ...rest } = prev
+          return rest
+        })
+      },
+      onError: () => {
+        setOperatingContainers(prev => {
+          const { [containerId]: _, ...rest } = prev
+          return rest
+        })
+      }
+    })
     handleMenuClose()
   }
 
   const handleRestartContainer = (containerId: string) => {
-    restartContainerMutation.mutate({ id: containerId })
+    setOperatingContainers(prev => ({ ...prev, [containerId]: 'restarting' }))
+    restartContainerMutation.mutate({ id: containerId }, {
+      onSuccess: () => {
+        setOperatingContainers(prev => {
+          const { [containerId]: _, ...rest } = prev
+          return rest
+        })
+      },
+      onError: () => {
+        setOperatingContainers(prev => {
+          const { [containerId]: _, ...rest } = prev
+          return rest
+        })
+      }
+    })
     handleMenuClose()
   }
 
@@ -132,7 +177,21 @@ function ContainersPage() {
       title: 'Kill Container',
       message: 'Are you sure you want to kill this container? This will forcefully terminate the container.',
       action: () => {
-        killContainerMutation.mutate({ id: containerId })
+        setOperatingContainers(prev => ({ ...prev, [containerId]: 'killing' }))
+        killContainerMutation.mutate({ id: containerId }, {
+          onSuccess: () => {
+            setOperatingContainers(prev => {
+              const { [containerId]: _, ...rest } = prev
+              return rest
+            })
+          },
+          onError: () => {
+            setOperatingContainers(prev => {
+              const { [containerId]: _, ...rest } = prev
+              return rest
+            })
+          }
+        })
         handleMenuClose()
       }
     })
@@ -144,12 +203,23 @@ function ContainersPage() {
       title: 'Remove Container',
       message: `Are you sure you want to remove this container? ${force ? 'This will force remove the container.' : ''}`,
       action: () => {
+        setOperatingContainers(prev => ({ ...prev, [containerId]: 'removing' }))
         removeContainerMutation.mutate(
           { id: containerId, options: { force } },
           {
             onSuccess: () => {
               setSelected(selected.filter(id => id !== containerId))
+              setOperatingContainers(prev => {
+                const { [containerId]: _, ...rest } = prev
+                return rest
+              })
               handleMenuClose()
+            },
+            onError: () => {
+              setOperatingContainers(prev => {
+                const { [containerId]: _, ...rest } = prev
+                return rest
+              })
             }
           }
         )
@@ -157,30 +227,66 @@ function ContainersPage() {
     })
   }
 
-  const handleBulkStart = () => {
+  const handleBulkStart = async () => {
     const stoppedSelected = selected.filter(id => {
       const container = containers.find(c => c.Id === id)
       return container && container.State !== 'running'
     })
     
-    Promise.all(
-      stoppedSelected.map(containerId =>
-        startContainerMutation.mutateAsync(containerId)
+    // Set all as starting
+    const startingStates = stoppedSelected.reduce((acc, id) => {
+      acc[id] = 'starting'
+      return acc
+    }, {} as typeof operatingContainers)
+    setOperatingContainers(prev => ({ ...prev, ...startingStates }))
+    
+    try {
+      await Promise.all(
+        stoppedSelected.map(containerId =>
+          startContainerMutation.mutateAsync(containerId)
+        )
       )
-    )
+    } catch (error) {
+      console.error('Error starting containers:', error)
+    } finally {
+      // Clear operating states
+      setOperatingContainers(prev => {
+        const newState = { ...prev }
+        stoppedSelected.forEach(id => delete newState[id])
+        return newState
+      })
+    }
   }
 
-  const handleBulkStop = () => {
+  const handleBulkStop = async () => {
     const runningSelected = selected.filter(id => {
       const container = containers.find(c => c.Id === id)
       return container && container.State === 'running'
     })
     
-    Promise.all(
-      runningSelected.map(containerId =>
-        stopContainerMutation.mutateAsync({ id: containerId })
+    // Set all as stopping
+    const stoppingStates = runningSelected.reduce((acc, id) => {
+      acc[id] = 'stopping'
+      return acc
+    }, {} as typeof operatingContainers)
+    setOperatingContainers(prev => ({ ...prev, ...stoppingStates }))
+    
+    try {
+      await Promise.all(
+        runningSelected.map(containerId =>
+          stopContainerMutation.mutateAsync({ id: containerId })
+        )
       )
-    )
+    } catch (error) {
+      console.error('Error stopping containers:', error)
+    } finally {
+      // Clear operating states
+      setOperatingContainers(prev => {
+        const newState = { ...prev }
+        runningSelected.forEach(id => delete newState[id])
+        return newState
+      })
+    }
   }
 
   const handleBulkRemove = (force = false) => {
@@ -191,6 +297,13 @@ function ContainersPage() {
       title: 'Remove Selected Containers',
       message: `Are you sure you want to remove ${selected.length} selected container(s)? ${force ? 'This will force remove the containers.' : ''}`,
       action: async () => {
+        // Set all as removing
+        const removingStates = selected.reduce((acc, id) => {
+          acc[id] = 'removing'
+          return acc
+        }, {} as typeof operatingContainers)
+        setOperatingContainers(prev => ({ ...prev, ...removingStates }))
+        
         try {
           await Promise.all(
             selected.map(containerId =>
@@ -201,6 +314,13 @@ function ContainersPage() {
           refetch()
         } catch (error) {
           console.error('Error removing containers:', error)
+        } finally {
+          // Clear operating states
+          setOperatingContainers(prev => {
+            const newState = { ...prev }
+            selected.forEach(id => delete newState[id])
+            return newState
+          })
         }
       }
     })
@@ -351,11 +471,20 @@ function ContainersPage() {
                           <code>{container.Id.slice(0, 12)}</code>
                         </TableCell>
                         <TableCell>
-                          <Chip
-                            label={container.State}
-                            size="small"
-                            color={getStatusColor(container.State) as any}
-                          />
+                          {operatingContainers[container.Id] ? (
+                            <Chip
+                              label={operatingContainers[container.Id]}
+                              size="small"
+                              color="info"
+                              icon={<CircularProgress size={16} />}
+                            />
+                          ) : (
+                            <Chip
+                              label={container.State}
+                              size="small"
+                              color={getStatusColor(container.State) as any}
+                            />
+                          )}
                         </TableCell>
                         <TableCell>{formatDate(container.Created)}</TableCell>
                         <TableCell>
@@ -364,24 +493,34 @@ function ContainersPage() {
                               <Tooltip title="Stop">
                                 <IconButton
                                   size="small"
+                                  disabled={operatingContainers[container.Id] === 'stopping'}
                                   onClick={(e) => {
                                     e.stopPropagation()
                                     handleStopContainer(container.Id)
                                   }}
                                 >
-                                  <StopIcon />
+                                  {operatingContainers[container.Id] === 'stopping' ? (
+                                    <CircularProgress size={16} />
+                                  ) : (
+                                    <StopIcon />
+                                  )}
                                 </IconButton>
                               </Tooltip>
                             ) : (
                               <Tooltip title="Start">
                                 <IconButton
                                   size="small"
+                                  disabled={operatingContainers[container.Id] === 'starting'}
                                   onClick={(e) => {
                                     e.stopPropagation()
                                     handleStartContainer(container.Id)
                                   }}
                                 >
-                                  <StartIcon />
+                                  {operatingContainers[container.Id] === 'starting' ? (
+                                    <CircularProgress size={16} />
+                                  ) : (
+                                    <StartIcon />
+                                  )}
                                 </IconButton>
                               </Tooltip>
                             )}
@@ -415,30 +554,81 @@ function ContainersPage() {
           const container = containers.find(c => c.Id === menuContainerId)
           if (!container) return null
           
+          const isOperating = !!operatingContainers[menuContainerId]
+          const operation = operatingContainers[menuContainerId]
+          
           return (
             <>
               {container.State === 'running' ? (
                 <>
-                  <MenuItem onClick={() => handleStopContainer(menuContainerId)}>
-                    <StopIcon sx={{ mr: 1 }} /> Stop
+                  <MenuItem 
+                    onClick={() => handleStopContainer(menuContainerId)}
+                    disabled={isOperating}
+                  >
+                    {operation === 'stopping' ? (
+                      <CircularProgress size={20} sx={{ mr: 1 }} />
+                    ) : (
+                      <StopIcon sx={{ mr: 1 }} />
+                    )}
+                    Stop
                   </MenuItem>
-                  <MenuItem onClick={() => handleRestartContainer(menuContainerId)}>
-                    <RestartIcon sx={{ mr: 1 }} /> Restart
+                  <MenuItem 
+                    onClick={() => handleRestartContainer(menuContainerId)}
+                    disabled={isOperating}
+                  >
+                    {operation === 'restarting' ? (
+                      <CircularProgress size={20} sx={{ mr: 1 }} />
+                    ) : (
+                      <RestartIcon sx={{ mr: 1 }} />
+                    )}
+                    Restart
                   </MenuItem>
-                  <MenuItem onClick={() => handleKillContainer(menuContainerId)}>
-                    <DeleteIcon sx={{ mr: 1 }} /> Kill
+                  <MenuItem 
+                    onClick={() => handleKillContainer(menuContainerId)}
+                    disabled={isOperating}
+                  >
+                    {operation === 'killing' ? (
+                      <CircularProgress size={20} sx={{ mr: 1 }} />
+                    ) : (
+                      <DeleteIcon sx={{ mr: 1 }} />
+                    )}
+                    Kill
                   </MenuItem>
                 </>
               ) : (
-                <MenuItem onClick={() => handleStartContainer(menuContainerId)}>
-                  <StartIcon sx={{ mr: 1 }} /> Start
+                <MenuItem 
+                  onClick={() => handleStartContainer(menuContainerId)}
+                  disabled={isOperating}
+                >
+                  {operation === 'starting' ? (
+                    <CircularProgress size={20} sx={{ mr: 1 }} />
+                  ) : (
+                    <StartIcon sx={{ mr: 1 }} />
+                  )}
+                  Start
                 </MenuItem>
               )}
-              <MenuItem onClick={() => handleRemoveContainer(menuContainerId, false)}>
-                <DeleteIcon sx={{ mr: 1 }} /> Remove
+              <MenuItem 
+                onClick={() => handleRemoveContainer(menuContainerId, false)}
+                disabled={isOperating}
+              >
+                {operation === 'removing' ? (
+                  <CircularProgress size={20} sx={{ mr: 1 }} />
+                ) : (
+                  <DeleteIcon sx={{ mr: 1 }} />
+                )}
+                Remove
               </MenuItem>
-              <MenuItem onClick={() => handleRemoveContainer(menuContainerId, true)}>
-                <DeleteSweepIcon sx={{ mr: 1 }} /> Force Remove
+              <MenuItem 
+                onClick={() => handleRemoveContainer(menuContainerId, true)}
+                disabled={isOperating}
+              >
+                {operation === 'removing' ? (
+                  <CircularProgress size={20} sx={{ mr: 1 }} />
+                ) : (
+                  <DeleteSweepIcon sx={{ mr: 1 }} />
+                )}
+                Force Remove
               </MenuItem>
             </>
           )

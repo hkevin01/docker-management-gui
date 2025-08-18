@@ -14,7 +14,10 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: 'dist',
-    sourcemap: true,
+  outDir: 'dist',
+  // Disable sourcemaps in production builds to avoid noisy warnings like
+  // "Error when using sourcemap for reporting an error: Can't resolve original location"
+  // from dependencies that ship incomplete maps (e.g., MUI). Dev server maps are unaffected.
+  sourcemap: false,
   },
 })
